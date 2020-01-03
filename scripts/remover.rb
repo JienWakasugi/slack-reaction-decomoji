@@ -1,18 +1,18 @@
-# Decomoji Importer
-class Importer
-  DEFAULT_IMPORT_IMG_DIR = File.expand_path(File.dirname(__FILE__)) + "/../decomoji/basic"
+# Decomoji Remover
+class Remover
+  DEFAULT_REMOVE_IMG_DIR = File.expand_path(File.dirname(__FILE__)) + "/../decomoji/basic"
 
-  def initialize(import_img_dir: nil)
+  def initialize(remove_img_dir: nil)
     @page = nil
     @agent = Mechanize.new
-    @import_img_dir = import_img_dir || DEFAULT_IMPORT_IMG_DIR
+    @remove_img_dir = remove_img_dir || DEFAULT_REMOVE_IMG_DIR
   end
   attr_accessor :page, :agent, :team_name, :token
 
   def serial
     ask_team_name
     move_to_emoji_page
-    upload_decomojis
+    remove_decomojis
   end
 
   private
@@ -65,29 +65,27 @@ class Importer
     end
   end
 
-  def upload_decomojis
+  def remove_decomojis
     emojis = list_emojis
-    files = Dir.glob(@import_img_dir + "/*.png")
+    files = Dir.glob(@remove_img_dir + "/*.png")
     len = files.length
     files.each.with_index(1) do |path, i|
       basename = File.basename(path, '.*')
 
-      # skip if already exists
-      if emojis.include?(basename)
-        puts "(#{i}/#{len}) #{basename} already exists, skip"
+      # skip if not found
+      unless emojis.include?(basename)
+        puts "(#{i}/#{len}) #{basename} not found, skip"
         next
       end
 
-      puts "(#{i}/#{len}) importing #{basename}..."
+      puts "(#{i}/#{len}) removing #{basename}..."
 
       begin
         params = {
           name: basename,
-          image: File.new(path),
-          mode: 'data',
           token: token
         }
-        response = agent.post("https://#{team_name}.slack.com/api/emoji.add", params)
+        response = agent.post("https://#{team_name}.slack.com/api/emoji.remove", params)
       rescue Mechanize::ResponseCodeError => e
         if @is_two_factor
           retry_after = e.page.header['retry-after']

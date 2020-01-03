@@ -2,8 +2,8 @@ require 'highline/import'
 require 'json'
 require 'mechanize'
 
-require './importer'
+require './remover'
 
-importer = Importer.new
-importer.serial
+remover = Remover.new
+remover.serial
 puts 'Done!'
